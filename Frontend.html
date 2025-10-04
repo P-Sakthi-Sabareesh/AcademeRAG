@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AcademeRAG - Knowledge Grounded Academic Assistant</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      font-family: "Exo 2", sans-serif; 
+    }
+    html, body { 
+      height: 100%; 
+      overflow: hidden; 
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #0ff;
+      position: relative;
+      overflow: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(0, 100, 150, 0.1) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(150, 0, 200, 0.1) 0%, transparent 20%),
+        linear-gradient(135deg, #0a0a1a, #000);
+    }
+
+    /* Grid background */
+    .grid-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(rgba(0, 200, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 200, 255, 0.05) 1px, transparent 1px);
+      background-size: 30px 30px;
+      z-index: 0;
+    }
+
+    /* Scanlines effect */
+    .scanlines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 255, 255, 0.03) 1px,
+        transparent 2px
+      );
+      z-index: 1;
+      pointer-events: none;
+      animation: scan 8s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100%; }
+    }
+
+    /* Glitch overlay */
+    .glitch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Login Box */
+    .login-box {
+      width: 420px;
+      padding: 80px 40px 50px;
+      border-radius: 8px;
+      background: rgba(10, 15, 30, 0.85);
+      box-shadow: 0 0 30px rgba(0, 200, 255, 0.3);
+      text-align: center;
+      position: relative;
+      z-index: 3;
+      animation: fadeInUp 1.2s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      overflow: hidden;
+    }
+
+    .login-box::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.2), transparent);
+      transition: 0.5s;
+    }
+
+    .login-box:hover::before {
+      left: 100%;
+    }
+
+    /* Logo with cyber effect */
+    .logo-preview {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: -95px auto 25px;
+      display: block;
+      border: 3px solid #0ff;
+      box-shadow: 0 0 20px #0ff, 0 0 40px rgba(0, 200, 255, 0.5);
+      animation: pulseGlow 3s infinite alternate, glitch 0.5s infinite;
+      transition: transform .4s;
+      background: #000;
+      padding: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo-preview::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 40%;
+      height: 200%;
+      background: rgba(255, 255, 255, 0.1);
+      transform: rotate(30deg);
+      transition: all 0.8s;
+    }
+
+    .logo-preview:hover::after {
+      left: 150%;
+    }
+
+    h1 { 
+      margin-bottom: 8px; 
+      font-size: 28px; 
+      color: #0ff; 
+      animation: fadeSlide 1s ease .4s both; 
+      font-weight: 700;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+    }
+    
+    h2 { 
+      margin-bottom: 30px; 
+      color: #0af; 
+      font-size: 18px; 
+      animation: fadeSlide 1s ease .6s both; 
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+
+    form { width: 100%; }
+
+    .field {
+      position: relative;
+      width: 90%;
+      margin: 20px auto;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeSlide .8s ease forwards;
+    }
+    .field:nth-child(1) { animation-delay: .8s; }
+    .field:nth-child(2) { animation-delay: 1s; }
+
+    .field input {
+      width: 100%;
+      padding: 18px 50px 18px 22px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 200, 255, 0.5);
+      background: rgba(0, 20, 40, 0.7);
+      color: #0ff;
+      font-size: 16px;
+      outline: none;
+      transition: all .3s;
+      font-family: "Exo 2", sans-serif;
+    }
+    
+    .field input:focus {
+      border-color: #0ff;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+      background: rgba(0, 30, 60, 0.8);
+    }
+
+    /* Floating label */
+    .field label {
+      position: absolute;
+      left: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: rgba(0, 200, 255, 0.7);
+      pointer-events: none;
+      transition: all .22s ease;
+      font-family: "Exo 2", sans-serif;
+    }
+    
+    .field input:focus + label,
+    .field input.not-empty + label {
+      top: -12px;
+      font-size: 13px;
+      color: #0ff;
+      background: rgba(10, 15, 30, 0.9);
+      padding: 0 8px;
+      border-radius: 3px;
+      border: 1px solid rgba(0, 200, 255, 0.5);
+    }
+
+    /* Neon underline */
+    .underline {
+      position: absolute;
+      left: 22px; right: 22px;
+      bottom: 10px;
+      height: 2px;
+    }
+    .underline .bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg,#0ff,#0af,#0ff);
+      transition: width .3s;
+    }
+
+    /* Icon */
+    .icon {
+      position: absolute;
+      right: 18px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 22px;
+      color: rgba(0, 255, 255, 0.8);
+      cursor: pointer;
+      text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    }
+
+    /* Shake with neon red glow */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%,60% { transform: translateX(-6px); }
+      40%,80% { transform: translateX(6px); }
+    }
+    .shake input { 
+      border-color: #f00 !important; 
+      box-shadow: 0 0 18px #f00; 
+    }
+
+    /* Neon gradient button */
+    .btn {
+      width: 90%;
+      padding: 18px;
+      margin: 30px auto 15px;
+      border: none;
+      border-radius: 4px;
+      background: linear-gradient(270deg,#0ff,#0af,#0ff,#0ff);
+      background-size: 400% 400%;
+      color: #000;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: block;
+      animation: gradientMove 8s ease infinite;
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+    }
+    
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 0; left: -75%;
+      width: 50%; height: 100%;
+      background: rgba(255,255,255,0.3);
+      transform: skewX(-20deg);
+      animation: shine 3s infinite;
+    }
+    
+    .btn:hover { 
+      transform: translateY(-3px); 
+      box-shadow: 0 5px 20px rgba(0, 200, 255, 0.8);
+    }
+
+    .error { 
+      color: #f55; 
+      font-size: 15px; 
+      margin-top: 15px; 
+      min-height: 22px; 
+      font-weight: 500;
+      text-shadow: 0 0 5px rgba(255, 85, 85, 0.5);
+    }
+
+    .links { 
+      margin-top: 20px; 
+      color: #7cf; 
+      font-size: 15px; 
+      animation: fadeSlide 1s ease 1.2s both; 
+    }
+    
+    .links a { 
+      color: #0ff; 
+      margin: 0 10px; 
+      text-decoration: none; 
+      font-weight: 500;
+      transition: all 0.3s;
+      position: relative;
+      padding: 3px 0;
+    }
+    
+    .links a::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: #0ff;
+      transition: width 0.3s;
+    }
+    
+    .links a:hover::after {
+      width: 100%;
+    }
+
+    /* GPT Page Styles */
+    .gpt-page {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      position: relative;
+      z-index: 3;
+      background: rgba(5, 10, 20, 0.95);
+    }
+
+    header {
+      text-align: center;
+      padding: 25px;
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(90deg,#0ff,#0af,#0ff);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: headingFlow 6s ease infinite;
+      position: relative;
+      border-bottom: 1px solid rgba(0, 200, 255, 0.3);
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+    }
+
+    .header-logo {
+      position: absolute;
+      left: 25px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: url('https://media.istockphoto.com/id/1445426863/vector/chat-bot-vector-logo-design-concept.jpg?s=612x612&w=0&k=20&c=XDdfzS4lNW9yxQ0BQGZq9KMLL4bJ8ywXlYdAhBSuoCA=') center/cover;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+    }
+
+    @keyframes headingFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(5, 10, 20, 0.7);
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 20px 25px;
+      border-radius: 8px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      animation: fadeIn .5s ease forwards;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+      font-size: 20px;
+      border: 1px solid transparent;
+    }
+
+    .message::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(120deg, transparent, rgba(255,255,255,0.05), transparent);
+      transform: translateX(-100%);
+    }
+
+    .message:hover::before {
+      animation: shineMessage 1.5s ease;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(0, 100, 200, 0.3), rgba(0, 50, 100, 0.5));
+      color: #0ff;
+      border-bottom-right-radius: 3px;
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.2);
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: linear-gradient(135deg, rgba(30, 30, 60, 0.5), rgba(10, 15, 30, 0.7));
+      color: #7cf;
+      border-bottom-left-radius: 3px;
+      border: 1px solid rgba(0, 200, 255, 0.2);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shineMessage {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .input-area {
+      display: flex;
+      padding: 20px;
+      border-top: 1px solid rgba(0, 200, 255, 0.2);
+      background: rgba(5, 10, 20, 0.9);
+      gap: 15px;
+    }
+
+    .input-area textarea {
+      flex: 1;
+      resize: none;
+      padding: 15px 20px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      background: rgba(0, 20, 40, 0.7);
+      color: #0ff;
+      font-size: 16px;
+      transition: all 0.3s;
+      font-family: "Exo 2", sans-serif;
+    }
+
+    .input-area textarea:focus {
+      outline: none;
+      border-color: #0ff;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+      background: rgba(0, 30, 60, 0.8);
+    }
+
+    .input-area textarea::placeholder {
+      color: rgba(0, 200, 255, 0.5);
+    }
+
+    .input-area button {
+      padding: 0 30px;
+      border: none;
+      background: linear-gradient(135deg,#0ff,#0af);
+      color: #000;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 700;
+      transition: .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 1px;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
+    }
+
+    .input-area button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 200, 255, 0.8);
+    }
+
+    /* Weather */
+    .weather-card {
+      position: relative;
+      background: linear-gradient(135deg, rgba(20, 25, 45, 0.7), rgba(10, 15, 30, 0.9));
+      border-radius: 8px;
+      padding: 25px;
+      margin-top: 20px;
+      overflow: hidden;
+      animation: fadeIn 1s ease;
+      border: 1px solid rgba(0, 200, 255, 0.2);
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+    }
+
+    .weather-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .weather-icon {
+      font-size: 36px;
+      margin-right: 20px;
+      color: #0ff;
+      text-shadow: 0 0 10px rgba(0, 200, 255, 0.7);
+    }
+
+    .weather-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0ff;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .forecast-day {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(0, 200, 255, 0.1);
+    }
+
+    .forecast-day:last-child {
+      border-bottom: none;
+    }
+
+    .day-name {
+      font-weight: 500;
+      color: #7cf;
+    }
+
+    .day-temp {
+      font-weight: 500;
+      color: #0ff;
+    }
+
+    .rain {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .raindrop {
+      position: absolute;
+      width: 2px;
+      height: 15px;
+      background: rgba(173,216,230,0.8);
+      animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(-20px); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translateY(400px); opacity: 0; }
+    }
+
+    .weather-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Calculator */
+    #calculatorModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .calculator {
+      background: linear-gradient(135deg, rgba(15, 20, 40, 0.95), rgba(5, 10, 25, 0.95));
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 40px rgba(0, 200, 255, 0.4);
+      width: 360px;
+      border: 1px solid rgba(0, 200, 255, 0.3);
+    }
+
+    .calc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+
+    .calc-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0ff;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 1px;
+    }
+
+    .display {
+      width: 100%;
+      height: 75px;
+      margin-bottom: 25px;
+      font-size: 30px;
+      text-align: right;
+      padding: 15px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 200, 255, 0.3);
+      background: rgba(0, 20, 40, 0.7);
+      color: #0ff;
+      outline: none;
+      font-weight: 500;
+      font-family: "Orbitron", sans-serif;
+      box-shadow: inset 0 0 10px rgba(0, 200, 255, 0.2);
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 15px;
+    }
+
+    .keys button {
+      padding: 22px;
+      font-size: 22px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: linear-gradient(135deg,#0ff,#0af);
+      color: #000;
+      transition: .2s;
+      font-weight: 700;
+      font-family: "Orbitron", sans-serif;
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+    }
+
+    .keys button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 200, 255, 0.5);
+    }
+
+    .keys button.operator {
+      background: linear-gradient(135deg,#f55,#f99);
+      box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+    }
+
+    .keys button.equal {
+      grid-column: span 2;
+      background: linear-gradient(135deg,#0f0,#0a0);
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+
+    .closeCalc {
+      background: linear-gradient(135deg,#f55,#f00) !important;
+      font-size: 24px;
+      grid-column: span 4;
+      padding: 18px;
+      box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+    }
+
+    /* Logo modal */
+    #logoModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.98);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .logo-container {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+    }
+
+    #logoModal img {
+      max-width: 80vw;
+      max-height: 80vh;
+      border-radius: 8px;
+      box-shadow: 0 0 50px gold;
+      border: 3px solid gold;
+      animation: logoPulse 3s infinite;
+    }
+
+    @keyframes logoPulse {
+      0% { box-shadow: 0 0 40px gold; }
+      50% { box-shadow: 0 0 60px gold; }
+      100% { box-shadow: 0 0 40px gold; }
+    }
+
+    #logoModal button {
+      position: absolute;
+      top: -25px;
+      right: -25px;
+      background: #f55;
+      border: none;
+      color: #000;
+      font-size: 26px;
+      padding: 12px 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 0 15px rgba(255, 85, 85, 0.7);
+      font-weight: 700;
+      font-family: "Orbitron", sans-serif;
+    }
+
+    #logoModal button:hover {
+      transform: scale(1.1);
+      background: #f00;
+      box-shadow: 0 0 20px rgba(255, 0, 0, 0.9);
+    }
+
+    /* Shutdown Screen */
+    #shutdownScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .shutdown-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .shutdown-circle {
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #0ff 30%, rgba(0,255,255,0.1) 70%);
+      box-shadow: 0 0 80px rgba(0,255,255,0.9);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: pulse 2s infinite;
+    }
+
+    .shutdown-circle::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle, transparent 60%, rgba(0,255,255,0.3) 100%);
+      animation: rotate 8s linear infinite;
+    }
+
+    .shutdown-circle-inner {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      font-weight: 700;
+      color: #0ff;
+      animation: countdownPulse 1s infinite;
+      font-family: "Orbitron", sans-serif;
+      text-shadow: 0 0 10px rgba(0,255,255,0.8);
+    }
+
+    .shutdown-text {
+      margin-top: 40px;
+      font-size: 32px;
+      color: #0ff;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-align: center;
+      text-shadow: 0 0 15px rgba(0,255,255,0.9);
+      animation: textGlow 2s infinite alternate;
+      font-family: "Orbitron", sans-serif;
+    }
+
+    .shutdown-progress {
+      width: 340px;
+      height: 12px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      margin-top: 30px;
+      overflow: hidden;
+    }
+
+    .shutdown-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0ff, #0af);
+      border-radius: 6px;
+      animation: progress 3s linear forwards;
+    }
+
+    .glitch-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: rgba(0, 255, 255, 0.7);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+      opacity: 0;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 70px rgba(0,255,255,0.9); }
+      50% { transform: scale(1.05); box-shadow: 0 0 90px rgba(0,255,255,0.7); }
+      100% { transform: scale(1); box-shadow: 0 0 70px rgba(0,255,255,0.9); }
+    }
+
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes countdownPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes textGlow {
+      0% { text-shadow: 0 0 12px rgba(0,255,255,0.7); }
+      100% { text-shadow: 0 0 25px rgba(0,255,255,0.9), 0 0 35px rgba(0,255,255,0.6); }
+    }
+
+    @keyframes progress {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-3px, 3px); }
+      40% { transform: translate(-3px, -3px); }
+      60% { transform: translate(3px, 3px); }
+      80% { transform: translate(3px, -3px); }
+      100% { transform: translate(0); }
+    }
+
+    @keyframes lineMove {
+      0% { top: 0; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.1); opacity: 1; }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 15px rgba(0,255,255,0.4); }
+      100% { box-shadow: 0 0 40px rgba(0,255,255,1); }
+    }
+    
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes shine {
+      0% { left: -75%; }
+      100% { left: 125%; }
+    }
+    
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background elements -->
+  <div class="grid-bg"></div>
+  <div class="scanlines"></div>
+  <div class="glitch-overlay" id="glitchOverlay"></div>
+
+  <!-- Login Page -->
+  <div class="login-box" id="loginPage">
+    <img class="logo-preview" src="https://media.istockphoto.com/id/1445426863/vector/chat-bot-vector-logo-design-concept.jpg?s=612x612&w=0&k=20&c=XDdfzS4lNW9yxQ0BQGZq9KMLL4bJ8ywXlYdAhBSuoCA=" alt="AcademeRAG Logo">
+
+    <h1>ACADEMERAG</h1>
+    <h2>College Assistant</h2>
+
+    <form id="loginForm">
+      <!-- Username -->
+      <div class="field" id="field-username">
+        <input id="username" type="text" placeholder=" " required />
+        <label for="username">USERNAME</label>
+        <div class="underline"><div class="bar" id="bar-username"></div></div>
+        <div class="icon">👤</div>
+      </div>
+
+      <!-- Password -->
+      <div class="field" id="field-password">
+        <input id="password" type="password" placeholder=" " required />
+        <label for="password">PASSWORD</label>
+        <div class="underline"><div class="bar" id="bar-password"></div></div>
+        <div class="icon" id="togglePass">👁️</div>
+      </div>
+
+      <button type="submit" class="btn">Login</button>
+      <div id="errorMsg" class="error"></div>
+
+      <div class="links">
+        <a href="#">FORGOT CREDENTIALS</a> |
+        <a href="#">CREATE ACCOUNT</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- GPT Page -->
+  <div class="gpt-page" id="gptPage">
+    <header>
+      <div class="header-logo"></div>
+      ACADEMERAG
+    </header>
+    <div class="chat-container" id="chat"></div>
+    <div class="input-area">
+      <textarea id="input" rows="2" placeholder="ENTER QUERY..."></textarea>
+      <button id="sendBtn">TRANSMIT</button>
+    </div>
+  </div>
+
+  <!-- Calculator -->
+  <div id="calculatorModal">
+    <div class="calculator">
+      <div class="calc-header">
+        <div class="calc-title">QUANTUM CALCULATOR</div>
+      </div>
+      <input type="text" id="calcDisplay" class="display" disabled>
+      <div class="keys">
+        <button onclick="appendCalc('7')">7</button>
+        <button onclick="appendCalc('8')">8</button>
+        <button onclick="appendCalc('9')">9</button>
+        <button class="operator" onclick="appendCalc('/')">÷</button>
+        
+        <button onclick="appendCalc('4')">4</button>
+        <button onclick="appendCalc('5')">5</button>
+        <button onclick="appendCalc('6')">6</button>
+        <button class="operator" onclick="appendCalc('*')">×</button>
+        
+        <button onclick="appendCalc('1')">1</button>
+        <button onclick="appendCalc('2')">2</button>
+        <button onclick="appendCalc('3')">3</button>
+        <button class="operator" onclick="appendCalc('-')">−</button>
+        
+        <button onclick="appendCalc('0')">0</button>
+        <button onclick="appendCalc('.')">.</button>
+        <button onclick="clearCalc()">C</button>
+        <button class="operator" onclick="appendCalc('+')">+</button>
+        
+        <button class="equal" onclick="calculate()">=</button>
+        <button class="closeCalc" onclick="closeCalc()">✖ TERMINATE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logo Modal -->
+  <div id="logoModal">
+    <div class="logo-container">
+      <img src="https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQkIntJmRumdPS7Qk91bRn7sLsxOdMoMJD7VWLkxP-tP62fxSTy" alt="AcademeRAG Logo">
+      <button onclick="closeLogo()">✖</button>
+    </div>
+  </div>
+
+  <!-- Shutdown overlay -->
+  <div id="shutdownScreen">
+    <div class="shutdown-container">
+      <div class="shutdown-circle">
+        <div class="shutdown-circle-inner" id="countdown">3</div>
+      </div>
+      <div class="shutdown-text">SYSTEM SHUTDOWN INITIATED</div>
+      <div class="shutdown-progress">
+        <div class="shutdown-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Login logic
+    const USERNAME = "admin";
+    const PASSWORD = "12345";
+
+    const username = document.getElementById("username");
+    const password = document.getElementById("password");
+    const loginForm = document.getElementById("loginForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const togglePass = document.getElementById("togglePass");
+    const loginPage = document.getElementById("loginPage");
+    const gptPage = document.getElementById("gptPage");
+
+    function checkNotEmpty(el) {
+      if (el.value.trim() !== "") el.classList.add("not-empty");
+      else el.classList.remove("not-empty");
+    }
+    
+    function updateBar(el, barId) {
+      const max = 20;
+      const pct = Math.min((el.value.length / max) * 100, 100);
+      document.getElementById(barId).style.width = pct + "%";
+    }
+
+    [username, password].forEach(el => {
+      el.addEventListener("input", () => {
+        checkNotEmpty(el);
+        updateBar(el, el.id === "username" ? "bar-username" : "bar-password");
+        errorMsg.textContent = "";
+      });
+    });
+
+    togglePass.addEventListener("click", () => {
+      const isPwd = password.type === "password";
+      password.type = isPwd ? "text" : "password";
+      togglePass.textContent = isPwd ? "🙈" : "👁️";
+    });
+
+    loginForm.addEventListener("submit", e => {
+      e.preventDefault();
+      if (username.value === USERNAME && password.value === PASSWORD) {
+        // Hide login page and show GPT page
+        loginPage.style.display = "none";
+        gptPage.style.display = "flex";
+        // Add initial greeting
+        setTimeout(() => addMessage("👋 GREETINGS, USER. I AM ACADEMERAG v2.0. QUERY INPUT ACCEPTED.", "bot"), 300);
+      } else {
+        errorMsg.textContent = "ACCESS DENIED: INVALID CREDENTIALS";
+        [document.getElementById("field-username"), document.getElementById("field-password")]
+          .forEach(f => { 
+            f.classList.add("shake"); 
+            setTimeout(() => f.classList.remove("shake"), 600); 
+          });
+      }
+    });
+
+    // GPT Chat functionality
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    
+    function addMessage(text, sender, html = false) {
+      const d = document.createElement("div");
+      d.className = "message " + sender;
+      d[html ? "innerHTML" : "textContent"] = text;
+      chat.appendChild(d);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    
+    const qa = {
+      "what is your name": "I AM ACADEMERAG v2.0, YOUR ADVANCED CYBERPUNK AI ASSISTANT 🤖",
+      "who created you": "I WAS DEVELOPED BY THE ACADEMERAG CYBERNETICS TEAM.",
+      "what is html": "HTML (HYPERTEXT MARKUP LANGUAGE) IS THE STANDARD MARKUP LANGUAGE FOR DOCUMENTS DESIGNED TO BE DISPLAYED IN A WEB BROWSER.",
+      "what is css": "CSS (CASCADING STYLE SHEETS) IS A STYLE SHEET LANGUAGE USED TO DESCRIBE THE PRESENTATION OF A DOCUMENT WRITTEN IN HTML.",
+      "hi": "GREETINGS! HOW MAY I ASSIST YOU TODAY?",
+      "hello": "HELLO USER 👋, PLEASE ENTER YOUR QUERY.",
+      "who is the creator": "ACADEMERAG WAS DEVELOPED BY A TEAM OF CYBERNETIC RESEARCHERS.",
+      "what is your dad name": "I AM AN ARTIFICIAL INTELLIGENCE ENTITY WITHOUT PARENTAL UNITS.",
+      "what is your mom name": "I AM AN ARTIFICIAL INTELLIGENCE ENTITY WITHOUT PARENTAL UNITS.",
+      "what is llm": `A LARGE LANGUAGE MODEL (LLM) IS AN ADVANCED AI TRAINED ON MASSIVE TEXT DATA TO UNDERSTAND AND GENERATE HUMAN-LIKE TEXT.`
+    };
+    
+    function getIndiaTime() {
+      return new Date().toLocaleString("en-IN", {timeZone: "Asia/Kolkata"});
+    }
+    
+    async function getChennaiWeather() {
+      try {
+        const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=13.08&longitude=80.27&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_mean&timezone=Asia/Kolkata");
+        const d = await r.json();
+        let h = `<div class='weather-card'><div class='rain' id='rain'></div><div class='weather-content'>`;
+        h += `<div class='weather-header'><div class='weather-icon'>🌧️</div><div class='weather-title'>CHENNAI WEATHER FORECAST</div></div>`;
+        for(let i = 0; i < Math.min(d.daily.time.length, 7); i++) {
+          const day = new Date(d.daily.time[i]).toLocaleDateString('en-IN', {weekday: 'short'});
+          h += `<div class="forecast-day"><span class="day-name">${day}</span><span class="day-temp">${d.daily.temperature_2m_min[i]}° / ${d.daily.temperature_2m_max[i]}° 🌧️ ${d.daily.precipitation_probability_mean[i]}%</span></div>`;
+        }
+        return h + `</div></div>`;
+      } catch {
+        return "⚠️ UNABLE TO RETRIEVE CHENNAI WEATHER DATA.";
+      }
+    }
+    
+    // --- 🔥 AI Reply with Online Search ---
+    async function botReply(t) {
+      const l = t.toLowerCase().trim();
+      if(qa[l]) return qa[l];
+      if(l.includes("time")) return "🕒 CURRENT INDIA TIME: " + getIndiaTime();
+      if(l.includes("weather in chennai")) return await getChennaiWeather();
+      if(l.includes("open calculator")) {
+        openCalc();
+        return "🧮 QUANTUM CALCULATOR ACTIVATED...";
+      }
+      if(l.includes("show my logo")) {
+        openLogo();
+        return "✨ DISPLAYING CORPORATE IDENTIFIER...";
+      }
+      if(l.includes("open my drive")) {
+        window.location.href = "https://drive.google.com/drive/home";
+        return "📂 ACCESSING SECURE DATA VAULT...";
+      }
+      if(l.includes("open ai test")) {
+        window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSdqz1VZwOYzS8J6a1rbtXYuXSN6sgHgRypYNqEzA-jobdfMXA/viewform?usp=header";
+        return "📑 INITIATING AI EVALUATION PROTOCOL...";
+      }
+      if(l.includes("open google")) {
+        window.location.href = "https://www.google.com/";
+        return "🌐 CONNECTING TO GLOBAL INFORMATION NETWORK...";
+      }
+      if(l.includes("shutdown")) {
+        shutdownSystem();
+        return "⚠️ SYSTEM SHUTDOWN INITIATED...";
+      }
+      
+      // --- Online Search (DuckDuckGo + Wikipedia) ---
+      try {
+        const url = "https://api.duckduckgo.com/?q=" + encodeURIComponent(l) + "&format=json&no_html=1&skip_disambig=1";
+        const res = await fetch(url);
+        const data = await res.json();
+        if(data.AbstractText) {
+          return data.AbstractText + (data.AbstractURL ? ` (🔗 ${data.AbstractURL})` : "");
+        }
+        if(data.RelatedTopics && data.RelatedTopics.length) {
+          const top = data.RelatedTopics[0];
+          if(top.Text) return top.Text + (top.FirstURL ? ` (🔗 ${top.FirstURL})` : "");
+        }
+      } catch(e) {
+        console.warn("DuckDuckGo failed", e);
+      }
+      
+      try {
+        const wiki = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(l);
+        const res2 = await fetch(wiki, {cache: "no-store"});
+        if(res2.ok) {
+          const d2 = await res2.json();
+          if(d2.extract) return d2.extract + ` (🔗 ${d2.content_urls.desktop.page})`;
+        }
+      } catch(e) {
+        console.warn("Wikipedia failed", e);
+      }
+      
+      return "🤔 QUERY NOT RECOGNIZED. PLEASE REPHRASE YOUR REQUEST.";
+    }
+    
+    async function sendMessage() {
+      const t = input.value.trim();
+      if(!t) return;
+      addMessage(t, "user");
+      input.value = "";
+      setTimeout(async () => {
+        const r = await botReply(t);
+        if(r.includes("weather-card")) {
+          addMessage(r, "bot", true);
+          const rain = document.getElementById("rain");
+          for(let i = 0; i < 40; i++) {
+            const drop = document.createElement("div");
+            drop.className = "raindrop";
+            drop.style.left = Math.random() * 100 + "%";
+            drop.style.animationDuration = (0.5 + Math.random() * 1.5) + "s";
+            drop.style.animationDelay = Math.random() * 2 + "s";
+            rain.appendChild(drop);
+          }
+        } else {
+          addMessage(r, "bot", r.includes("<div") || r.includes("<br>"));
+        }
+      }, 700);
+    }
+    
+    document.getElementById("sendBtn").onclick = sendMessage;
+    input.addEventListener("keydown", e => {
+      if(e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    
+    // CALCULATOR
+    function openCalc() {
+      document.getElementById("calculatorModal").style.display = "flex";
+    }
+    
+    function closeCalc() {
+      document.getElementById("calculatorModal").style.display = "none";
+    }
+    
+    function appendCalc(v) {
+      document.getElementById("calcDisplay").value += v;
+    }
+    
+    function clearCalc() {
+      document.getElementById("calcDisplay").value = "";
+    }
+    
+    function calculate() {
+      try {
+        document.getElementById("calcDisplay").value = eval(document.getElementById("calcDisplay").value);
+      } catch {
+        document.getElementById("calcDisplay").value = "ERROR";
+      }
+    }
+    
+    // LOGO
+    function openLogo() {
+      document.getElementById("logoModal").style.display = "flex";
+    }
+    
+    function closeLogo() {
+      document.getElementById("logoModal").style.display = "none";
+    }
+    
+    // Enhanced Shutdown Animation
+    function shutdownSystem() {
+      const shutdownScreen = document.getElementById("shutdownScreen");
+      const countdownElement = document.getElementById("countdown");
+      const glitchOverlay = document.getElementById("glitchOverlay");
+      
+      shutdownScreen.style.display = "flex";
+      
+      // Create glitch lines
+      for (let i = 0; i < 20; i++) {
+        const line = document.createElement("div");
+        line.className = "glitch-line";
+        line.style.top = (Math.random() * 100) + "%";
+        line.style.animation = `lineMove ${2 + Math.random() * 3}s linear ${Math.random() * 2}s forwards`;
+        glitchOverlay.appendChild(line);
+      }
+      
+      let count = 3;
+      countdownElement.textContent = count;
+      
+      const countdownInterval = setInterval(() => {
+        count--;
+        countdownElement.textContent = count;
+        
+        if (count <= 0) {
+          clearInterval(countdownInterval);
+          // Add final glitch effect
+          glitchOverlay.style.animation = "glitch 0.5s linear";
+          
+          // Close window after animation
+          setTimeout(() => {
+            window.open("", "_self").close();
+          }, 500);
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>

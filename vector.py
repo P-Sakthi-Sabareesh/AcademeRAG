@@ -10,7 +10,10 @@ import os
 from pypdf import PdfReader
 
 # List of PDF file paths
+'''
 pdf_paths = ["Project/RAG project - Sample PDF.pdf", "Project/RAG project sample pdf 2.pdf"]
+'''
+pdf_paths = ["Project/RAG sample 1.pdf","Project/RAG sample 2.pdf","Project/RAG sample 3.pdf","Project/RAG sample 4.pdf"]
 
 def pdfs_to_chunks(pdf_paths, chunk_size=1000):
     all_chunks = []

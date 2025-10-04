@@ -1046,269 +1046,115 @@
   </div>
 
   <script>
-    // Login logic
-    const USERNAME = "admin";
-    const PASSWORD = "12345";
+  // Declare constants for login validation first
+  const USERNAME = "admin";
+  const PASSWORD = "12345";
 
-    const username = document.getElementById("username");
-    const password = document.getElementById("password");
-    const loginForm = document.getElementById("loginForm");
-    const errorMsg = document.getElementById("errorMsg");
-    const togglePass = document.getElementById("togglePass");
-    const loginPage = document.getElementById("loginPage");
-    const gptPage = document.getElementById("gptPage");
+  // Retrieve DOM elements once the page is loaded
+  const loginForm = document.getElementById("loginForm");
+  const username = document.getElementById("username");
+  const password = document.getElementById("password");
+  const errorMsg = document.getElementById("errorMsg");
+  const loginPage = document.getElementById("loginPage");
+  const gptPage = document.getElementById("gptPage");
 
-    function checkNotEmpty(el) {
-      if (el.value.trim() !== "") el.classList.add("not-empty");
-      else el.classList.remove("not-empty");
-    }
-    
-    function updateBar(el, barId) {
-      const max = 20;
-      const pct = Math.min((el.value.length / max) * 100, 100);
-      document.getElementById(barId).style.width = pct + "%";
-    }
+  const chat = document.getElementById("chat");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("sendBtn");
 
-    [username, password].forEach(el => {
-      el.addEventListener("input", () => {
-        checkNotEmpty(el);
-        updateBar(el, el.id === "username" ? "bar-username" : "bar-password");
-        errorMsg.textContent = "";
+  // Login form submit event handler
+  loginForm.addEventListener("submit", e => {
+    e.preventDefault();
+    if (username.value === USERNAME && password.value === PASSWORD) {
+      loginPage.style.display = "none";
+      gptPage.style.display = "flex";
+      input.focus();
+      errorMsg.textContent = "";
+      setTimeout(() => addMessage("👋 GREETINGS, USER. I AM ACADEMERAG. I have been initialized with knowledge from your documents. Please ask your questions.", "bot"), 300);
+    } else {
+      errorMsg.textContent = "ACCESS DENIED: INVALID CREDENTIALS";
+      [document.getElementById("field-username"), document.getElementById("field-password")].forEach(f => {
+        f.classList.add("shake");
+        setTimeout(() => f.classList.remove("shake"), 600);
       });
-    });
+    }
+  });
 
-    togglePass.addEventListener("click", () => {
-      const isPwd = password.type === "password";
-      password.type = isPwd ? "text" : "password";
-      togglePass.textContent = isPwd ? "🙈" : "👁️";
-    });
+  // Function to add messages to chat window
+  function addMessage(text, sender) {
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message " + sender;
+    msgDiv.textContent = text;
+    chat.appendChild(msgDiv);
+    chat.scrollTop = chat.scrollHeight;
+  }
 
-    loginForm.addEventListener("submit", e => {
-      e.preventDefault();
-      if (username.value === USERNAME && password.value === PASSWORD) {
-        // Hide login page and show GPT page
-        loginPage.style.display = "none";
-        gptPage.style.display = "flex";
-        // Add initial greeting
-        setTimeout(() => addMessage("👋 GREETINGS, USER. I AM ACADEMERAG v2.0. QUERY INPUT ACCEPTED.", "bot"), 300);
+  // Send message handler
+  async function handleSendMessage() {
+    const question = input.value.trim();
+    if (!question) return;
+
+    addMessage(question, "user");
+    input.value = "";
+    input.disabled = true;
+    sendBtn.disabled = true;
+
+    const thinkingMsg = document.createElement("div");
+    thinkingMsg.className = "message bot";
+    thinkingMsg.textContent = "Processing... Retrieving context and generating response...";
+    chat.appendChild(thinkingMsg);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/ask/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+      const data = await response.json();
+
+      chat.removeChild(thinkingMsg);
+      if (data.answer) {
+        addMessage(data.answer, "bot");
       } else {
-        errorMsg.textContent = "ACCESS DENIED: INVALID CREDENTIALS";
-        [document.getElementById("field-username"), document.getElementById("field-password")]
-          .forEach(f => { 
-            f.classList.add("shake"); 
-            setTimeout(() => f.classList.remove("shake"), 600); 
-          });
+        addMessage(data.error || "An unknown error occurred.", "bot");
       }
-    });
 
-    // GPT Chat functionality
-    const chat = document.getElementById("chat");
-    const input = document.getElementById("input");
-    
-    function addMessage(text, sender, html = false) {
-      const d = document.createElement("div");
-      d.className = "message " + sender;
-      d[html ? "innerHTML" : "textContent"] = text;
-      chat.appendChild(d);
-      chat.scrollTop = chat.scrollHeight;
+    } catch (error) {
+      console.error('Error:', error);
+      chat.removeChild(thinkingMsg);
+      addMessage("SYSTEM ERROR: Failed to connect to the AI core. Ensure the Django server is running.", "bot");
+    } finally {
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
     }
-    
-    const qa = {
-      "what is your name": "I AM ACADEMERAG v2.0, YOUR ADVANCED CYBERPUNK AI ASSISTANT 🤖",
-      "who created you": "I WAS DEVELOPED BY THE ACADEMERAG CYBERNETICS TEAM.",
-      "what is html": "HTML (HYPERTEXT MARKUP LANGUAGE) IS THE STANDARD MARKUP LANGUAGE FOR DOCUMENTS DESIGNED TO BE DISPLAYED IN A WEB BROWSER.",
-      "what is css": "CSS (CASCADING STYLE SHEETS) IS A STYLE SHEET LANGUAGE USED TO DESCRIBE THE PRESENTATION OF A DOCUMENT WRITTEN IN HTML.",
-      "hi": "GREETINGS! HOW MAY I ASSIST YOU TODAY?",
-      "hello": "HELLO USER 👋, PLEASE ENTER YOUR QUERY.",
-      "who is the creator": "ACADEMERAG WAS DEVELOPED BY A TEAM OF CYBERNETIC RESEARCHERS.",
-      "what is your dad name": "I AM AN ARTIFICIAL INTELLIGENCE ENTITY WITHOUT PARENTAL UNITS.",
-      "what is your mom name": "I AM AN ARTIFICIAL INTELLIGENCE ENTITY WITHOUT PARENTAL UNITS.",
-      "what is llm": `A LARGE LANGUAGE MODEL (LLM) IS AN ADVANCED AI TRAINED ON MASSIVE TEXT DATA TO UNDERSTAND AND GENERATE HUMAN-LIKE TEXT.`
-    };
-    
-    function getIndiaTime() {
-      return new Date().toLocaleString("en-IN", {timeZone: "Asia/Kolkata"});
+  }
+
+  // Event listeners for send button and Enter key
+  sendBtn.addEventListener("click", handleSendMessage);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
-    
-    async function getChennaiWeather() {
-      try {
-        const r = await fetch("https://api.open-meteo.com/v1/forecast?latitude=13.08&longitude=80.27&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_mean&timezone=Asia/Kolkata");
-        const d = await r.json();
-        let h = `<div class='weather-card'><div class='rain' id='rain'></div><div class='weather-content'>`;
-        h += `<div class='weather-header'><div class='weather-icon'>🌧️</div><div class='weather-title'>CHENNAI WEATHER FORECAST</div></div>`;
-        for(let i = 0; i < Math.min(d.daily.time.length, 7); i++) {
-          const day = new Date(d.daily.time[i]).toLocaleDateString('en-IN', {weekday: 'short'});
-          h += `<div class="forecast-day"><span class="day-name">${day}</span><span class="day-temp">${d.daily.temperature_2m_min[i]}° / ${d.daily.temperature_2m_max[i]}° 🌧️ ${d.daily.precipitation_probability_mean[i]}%</span></div>`;
-        }
-        return h + `</div></div>`;
-      } catch {
-        return "⚠️ UNABLE TO RETRIEVE CHENNAI WEATHER DATA.";
-      }
+  });
+
+  // Calculator-related functions (keep or remove if not used)
+  function appendCalc(val) { document.getElementById('calcDisplay').value += val; }
+  function clearCalc() { document.getElementById('calcDisplay').value = ''; }
+  function calculate() {
+    try {
+      document.getElementById('calcDisplay').value = eval(document.getElementById('calcDisplay').value);
+    } catch (e) {
+      document.getElementById('calcDisplay').value = 'Error';
     }
-    
-    // --- 🔥 AI Reply with Online Search ---
-    async function botReply(t) {
-      const l = t.toLowerCase().trim();
-      if(qa[l]) return qa[l];
-      if(l.includes("time")) return "🕒 CURRENT INDIA TIME: " + getIndiaTime();
-      if(l.includes("weather in chennai")) return await getChennaiWeather();
-      if(l.includes("open calculator")) {
-        openCalc();
-        return "🧮 QUANTUM CALCULATOR ACTIVATED...";
-      }
-      if(l.includes("show my logo")) {
-        openLogo();
-        return "✨ DISPLAYING CORPORATE IDENTIFIER...";
-      }
-      if(l.includes("open my drive")) {
-        window.location.href = "https://drive.google.com/drive/home";
-        return "📂 ACCESSING SECURE DATA VAULT...";
-      }
-      if(l.includes("open ai test")) {
-        window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSdqz1VZwOYzS8J6a1rbtXYuXSN6sgHgRypYNqEzA-jobdfMXA/viewform?usp=header";
-        return "📑 INITIATING AI EVALUATION PROTOCOL...";
-      }
-      if(l.includes("open google")) {
-        window.location.href = "https://www.google.com/";
-        return "🌐 CONNECTING TO GLOBAL INFORMATION NETWORK...";
-      }
-      if(l.includes("shutdown")) {
-        shutdownSystem();
-        return "⚠️ SYSTEM SHUTDOWN INITIATED...";
-      }
-      
-      // --- Online Search (DuckDuckGo + Wikipedia) ---
-      try {
-        const url = "https://api.duckduckgo.com/?q=" + encodeURIComponent(l) + "&format=json&no_html=1&skip_disambig=1";
-        const res = await fetch(url);
-        const data = await res.json();
-        if(data.AbstractText) {
-          return data.AbstractText + (data.AbstractURL ? ` (🔗 ${data.AbstractURL})` : "");
-        }
-        if(data.RelatedTopics && data.RelatedTopics.length) {
-          const top = data.RelatedTopics[0];
-          if(top.Text) return top.Text + (top.FirstURL ? ` (🔗 ${top.FirstURL})` : "");
-        }
-      } catch(e) {
-        console.warn("DuckDuckGo failed", e);
-      }
-      
-      try {
-        const wiki = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(l);
-        const res2 = await fetch(wiki, {cache: "no-store"});
-        if(res2.ok) {
-          const d2 = await res2.json();
-          if(d2.extract) return d2.extract + ` (🔗 ${d2.content_urls.desktop.page})`;
-        }
-      } catch(e) {
-        console.warn("Wikipedia failed", e);
-      }
-      
-      return "🤔 QUERY NOT RECOGNIZED. PLEASE REPHRASE YOUR REQUEST.";
-    }
-    
-    async function sendMessage() {
-      const t = input.value.trim();
-      if(!t) return;
-      addMessage(t, "user");
-      input.value = "";
-      setTimeout(async () => {
-        const r = await botReply(t);
-        if(r.includes("weather-card")) {
-          addMessage(r, "bot", true);
-          const rain = document.getElementById("rain");
-          for(let i = 0; i < 40; i++) {
-            const drop = document.createElement("div");
-            drop.className = "raindrop";
-            drop.style.left = Math.random() * 100 + "%";
-            drop.style.animationDuration = (0.5 + Math.random() * 1.5) + "s";
-            drop.style.animationDelay = Math.random() * 2 + "s";
-            rain.appendChild(drop);
-          }
-        } else {
-          addMessage(r, "bot", r.includes("<div") || r.includes("<br>"));
-        }
-      }, 700);
-    }
-    
-    document.getElementById("sendBtn").onclick = sendMessage;
-    input.addEventListener("keydown", e => {
-      if(e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-    
-    // CALCULATOR
-    function openCalc() {
-      document.getElementById("calculatorModal").style.display = "flex";
-    }
-    
-    function closeCalc() {
-      document.getElementById("calculatorModal").style.display = "none";
-    }
-    
-    function appendCalc(v) {
-      document.getElementById("calcDisplay").value += v;
-    }
-    
-    function clearCalc() {
-      document.getElementById("calcDisplay").value = "";
-    }
-    
-    function calculate() {
-      try {
-        document.getElementById("calcDisplay").value = eval(document.getElementById("calcDisplay").value);
-      } catch {
-        document.getElementById("calcDisplay").value = "ERROR";
-      }
-    }
-    
-    // LOGO
-    function openLogo() {
-      document.getElementById("logoModal").style.display = "flex";
-    }
-    
-    function closeLogo() {
-      document.getElementById("logoModal").style.display = "none";
-    }
-    
-    // Enhanced Shutdown Animation
-    function shutdownSystem() {
-      const shutdownScreen = document.getElementById("shutdownScreen");
-      const countdownElement = document.getElementById("countdown");
-      const glitchOverlay = document.getElementById("glitchOverlay");
-      
-      shutdownScreen.style.display = "flex";
-      
-      // Create glitch lines
-      for (let i = 0; i < 20; i++) {
-        const line = document.createElement("div");
-        line.className = "glitch-line";
-        line.style.top = (Math.random() * 100) + "%";
-        line.style.animation = `lineMove ${2 + Math.random() * 3}s linear ${Math.random() * 2}s forwards`;
-        glitchOverlay.appendChild(line);
-      }
-      
-      let count = 3;
-      countdownElement.textContent = count;
-      
-      const countdownInterval = setInterval(() => {
-        count--;
-        countdownElement.textContent = count;
-        
-        if (count <= 0) {
-          clearInterval(countdownInterval);
-          // Add final glitch effect
-          glitchOverlay.style.animation = "glitch 0.5s linear";
-          
-          // Close window after animation
-          setTimeout(() => {
-            window.open("", "_self").close();
-          }, 500);
-        }
-      }, 1000);
-    }
+  }
+  function closeCalc() { document.getElementById('calculatorModal').style.display = 'none'; }
   </script>
 </body>
 </html>
